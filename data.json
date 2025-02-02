@@ -1,0 +1,12 @@
+{
+       "equations": {
+           "y0": "dy0/dt = y0",
+           "y1": "dy1/dt = -100*y1"
+       },
+       "result_at_start_point": [1.0, 1.0],
+       "h0": 0.01,
+       "t_start": 0.0,
+       "t_end": 0.1,
+       "accuracy": 1e-8,
+       "method": "msadams"
+     }

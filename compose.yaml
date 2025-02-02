@@ -1,0 +1,33 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672" # Основной AMQP порт
+      - "15672:15672" # Web UI
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+
+  spring-app:
+    build:
+      context: ./spring_adapter_server/ode_systems
+    container_name: spring-app
+    ports:
+      - "8080:8080"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  cpp-listener:
+    build:
+      context: ./cpp_GSL_server
+    container_name: cpp-listener
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
