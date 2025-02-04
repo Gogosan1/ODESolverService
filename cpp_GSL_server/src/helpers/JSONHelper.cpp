@@ -4,12 +4,22 @@ void JSONHelper::upload_from_json(nlohmann::json file, std::shared_ptr<Task> tas
 {
     // TODO::Add lambdas convert / add validation
     task->equations_strings = file["equations"].get<std::vector<std::string>>();
-    task->result_at_point = file["result_at_start_point"].get<std::vector<double>>();
+    task->start_conditions = file["initial_conditions"].get<std::vector<double>>();
     task->h0 = file["h0"].get<double>();
     task->t_start = file["t_start"].get<double>();
     task->t_end = file["t_end"].get<double>();
     task->accuracy = file["accuracy"].get<double>();
 
+    if (file.contains("jacobi_matrix") && file["jacobi_matrix"].is_array())
+    {
+        for (const auto &row : file["jacobi_matrix"])
+        {
+            if (row.is_array())
+            { // Проверяем, что каждая строка — это массив
+                task->jacobi_matrix_string.push_back(row.get<std::vector<std::string>>());
+            }
+        }
+    }
     std::string string_method = file["method"].get<std::string>();
     *method = stringToMethod(string_method);
 }

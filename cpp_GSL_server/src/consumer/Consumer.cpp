@@ -1,6 +1,5 @@
 #include "Consumer.hpp"
 
-// Конструктор
 Consumer::Consumer(const std::string &queue, const std::string &responseQueue)
     : loop(EV_DEFAULT), handler(loop), connection(&handler, AMQP::Address("amqp://guest:guest@rabbitmq:5672/")),
       channel(&connection), queueName(queue), responseQueue(responseQueue)
@@ -22,32 +21,42 @@ void Consumer::onMessageReceived(const AMQP::Message &message, uint64_t delivery
         std::shared_ptr<Task> task = std::make_shared<Task>();
         Method method;
 
-        std::string rawMessage(message.body(), message.bodySize());                                  // Получаем строку с учетом размера
+        //         std::string rawMessage = R"({
+        //   "equations": ["y0", "-100*y1" ],
+        //   "initial_conditions": [1.0, 1.0],
+        //   "h0": 0.01,
+        //   "t_start": 0.0,
+        //   "t_end": 0.1,
+        //   "accuracy": 1e-8,
+        //   "method": "bsimp",
+        //   "jacobi_matrix": [
+        //     ["1.0", "0"],
+        //     ["0", "-100"]
+        //   ]
+        // })";
+        std::string rawMessage(message.body(), message.bodySize());
         rawMessage.erase(std::remove(rawMessage.begin(), rawMessage.end(), '\n'), rawMessage.end()); // Удаляем \n
         rawMessage.erase(std::remove(rawMessage.begin(), rawMessage.end(), '\r'), rawMessage.end()); // Удаляем \r
+        nlohmann::json file = nlohmann::json::parse(rawMessage);
+        JSONHelper helper;
+        helper.upload_from_json(file, task, &method);
 
-        nlohmann::json file = nlohmann::json::parse(rawMessage); // Парсим JSON
-
-        std::unique_ptr<JSONHelper> helper = std::make_unique<JSONHelper>();
-        helper->upload_from_json(file, task, &method);
-
-        std::unique_ptr<ExpressionsParser> converter = std::make_unique<ExpressionsParser>();
-        converter->convert_string_to_maths(task);
+        std::shared_ptr<ExpressionsStorage> expr_storage = std::make_shared<ExpressionsStorage>(task);
 
         Solver solver;
-        std::unique_ptr<Solution> solution = solver.solve(task, method);
+        std::unique_ptr<Solution> solution = solver.solve(expr_storage, method, task);
 
         std::string json_string = solution->get_data();
-
+        std::cout << json_string;
         nlohmann::json responseJson = {
             {"status", "success"},
             {"message", json_string}};
-
         std::string responseStr = responseJson.dump();
-        // Отправляем ответ в responseQueue
+
+        //  Отправляем ответ в responseQueue
         channel.publish("", responseQueue, responseStr);
 
-        // Подтверждаем сообщение
+        // // Подтверждаем сообщение
         channel.ack(deliveryTag);
 
         std::cout << "Response sent to " << responseQueue << ": " << std::endl;
@@ -61,10 +70,8 @@ void Consumer::onMessageReceived(const AMQP::Message &message, uint64_t delivery
 // Запуск слушателя
 void Consumer::start()
 {
-    std::cout << "nj\n";
     channel.consume(queueName).onReceived([this](const AMQP::Message &message, uint64_t deliveryTag, bool redelivered)
                                           { this->onMessageReceived(message, deliveryTag, redelivered); });
 
     ev_run(loop, 0); // Запускаем event loop
-    std::cout << "consumer start";
 }

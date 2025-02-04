@@ -4,6 +4,7 @@ int main()
 {
     Consumer consumer("cppQueue", "responseQueue");
     consumer.start(); // Запуск слушателя
+
     return 0;
 }
 
@@ -19,6 +20,12 @@ int main()
 //     {"t_end", 0.1},                        // Конечное время
 //     {"accuracy", 1e-8},                    // Точность
 //     {"method", "msadams"}};                // Метод решения
+// "matrix": [
+//             ["a11", "a12", "a13"],
+//             ["a21", "a22", "a23"],
+//             ["a31", "a32", "a33"]
+//         ]
+
 // // rk2,
 // // rk4, works ok
 // // rkf45,

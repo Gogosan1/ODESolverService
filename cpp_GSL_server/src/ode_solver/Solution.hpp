@@ -13,6 +13,6 @@ public:
     Solution(int dimension);
     std::string get_data();
 
-   friend void to_json(nlohmann::json &j, const Solution &sol);
-   friend void from_json(const nlohmann::json &j, Solution &sol);
+    //    friend void to_json(nlohmann::json &j, const Solution &sol);
+    //    friend void from_json(const nlohmann::json &j, Solution &sol);
 };

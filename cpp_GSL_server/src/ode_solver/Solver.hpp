@@ -4,15 +4,16 @@
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_deriv.h>
 #include <memory>
-#include "Task.hpp"
+#include "../helpers/ExpressionsStorage.hpp"
 #include "Solution.hpp"
+#include "Task.hpp"
 #include "EnumMethods.hpp"
 class Solver
 {
 private:
-    static int compute_ODEs_right_sides(double t, const double y[], double f[], void *params);
+    static int func(double t, const double y[], double f[], void *params);
     static int jac(double t, const double y[], double *dfdy, double dfdt[], void *params);
 
 public:
-    std::unique_ptr<Solution> solve(std::shared_ptr<Task> task, Method method);
+    std::unique_ptr<Solution> solve(std::shared_ptr<ExpressionsStorage>, Method method, std::shared_ptr<Task> taska);
 };

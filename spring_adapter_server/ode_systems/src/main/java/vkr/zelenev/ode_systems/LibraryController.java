@@ -49,10 +49,3 @@ if (response != null) {
     }
     }
 }
-    //     if (response != null) {
-    //         return "Response received: " + response;
-    //     } else {
-    //         return "No response received (timeout)";
-    //     }
-    // }
-

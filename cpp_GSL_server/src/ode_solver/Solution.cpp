@@ -26,13 +26,13 @@ std::string Solution::get_data()
     return data;
 }
 
-// Определяем как сериализовать объект Solution в JSON
-void to_json(nlohmann::json& j, const Solution& sol) {
-    j = nlohmann::json{{"data", sol.data}, {"dimension", sol.dimension}};
-}
+// // Определяем как сериализовать объект Solution в JSON
+// void to_json(nlohmann::json& j, const Solution& sol) {
+//     j = nlohmann::json{{"data", sol.data}, {"dimension", sol.dimension}};
+// }
 
-// Определяем как десериализовать объект Solution из JSON
-void from_json(const nlohmann::json& j, Solution& sol) {
-    j.at("data").get_to(sol.data);
-    j.at("dimension").get_to(sol.dimension);
-}
+// // Определяем как десериализовать объект Solution из JSON
+// void from_json(const nlohmann::json& j, Solution& sol) {
+//     j.at("data").get_to(sol.data);
+//     j.at("dimension").get_to(sol.dimension);
+//}

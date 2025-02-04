@@ -1,64 +1,39 @@
 #include "Solver.hpp"
-#include <iostream>
-// TODO: вынести задание функции в отдельный класс, для возможности асинхронного решения
-// static временное решение
-int Solver::compute_ODEs_right_sides(double t, const double y[], double f[], void *params)
+
+int Solver::func(double t, const double y[], double f[], void *params)
 {
-    Task *task = static_cast<Task *>(params);
+    ExpressionsStorage *storage = static_cast<ExpressionsStorage *>(params);
 
-    int dimension = task->equations_strings.size();
-
-    for (int i = 0; i < dimension; i++)
+    for (int i = 0; i < storage->get_dimension(); i++)
     {
-        f[i] = task->expressions[i].value();
+        f[i] = storage->expressions[i].value();
     }
-
     return GSL_SUCCESS;
 }
 
 int Solver::jac(double t, const double y[], double *dfdy, double dfdt[], void *params)
 {
-    Task *task = static_cast<Task *>(params);
-    int dimension = task->equations_strings.size();
-    gsl_matrix_view J = gsl_matrix_view_array(dfdy, dimension, dimension);
+    ExpressionsStorage *storage = static_cast<ExpressionsStorage *>(params);
+
+    gsl_matrix_view J = gsl_matrix_view_array(dfdy, storage->get_dimension(), storage->get_dimension());
     gsl_matrix *matrix = &J.matrix;
 
-    // double h = 1e-6; // Шаг для численного дифференцирования
-    // gsl_function F;
-    // F.function = nullptr;
-
-    // for (int row = 0; row < dimension; row++)
-    // {
-    //     exprtk::expression<double> expr = task->expressions[row];
-
-    //     for (int column = 0; column < dimension; column++)
-    //     {
-    //         // Параметры для дифференцирования
-
-    //         // Численное дифференцирование по переменной y[column]
-    //         double result, abserr;
-    //         int status = gsl_deriv_central(&F, y[column], h, &result, &abserr);
-    //         std::cout << "Rres " << result << " abser " << abserr << "\n";
-    //         gsl_matrix_set(matrix, row, column, result);
-    //     }
-    // }
-
-    // for (int row = 0; row < dimension; row++)
-    // {
-    //     for (int column = 0; column < dimension; column++)
-    //     {
-
-    //         gsl_matrix_set(matrix, row, column, task->)
-    //     }
-    // }
+    for (int row = 0; row < storage->get_dimension(); row++)
+    {
+        for (int column = 0; column < storage->get_dimension(); column++)
+        {
+            gsl_matrix_set(matrix, row, column, storage->jacobi_matrix_expressions[row][column].value());
+        }
+    }
     return GSL_SUCCESS;
 }
 
 // TODO: определиться лучше постепенно присылать решение или сразу целиком?
 // добавить gsl_odeiv2_driver_set_nmax максимальное количество допустимых шагов
-// добавить задание jacobian
-std::unique_ptr<Solution> Solver::solve(std::shared_ptr<Task> task, Method method)
+
+std::unique_ptr<Solution> Solver::solve(std::shared_ptr<ExpressionsStorage> expr_storage, Method method, std::shared_ptr<Task> taska)
 {
+
     const gsl_odeiv2_step_type *gsl_method;
     switch (method)
     {
@@ -70,6 +45,9 @@ std::unique_ptr<Solution> Solver::solve(std::shared_ptr<Task> task, Method metho
         break;
     case Method::rkf45:
         gsl_method = gsl_odeiv2_step_rkf45;
+        break;
+    case Method::rkck:
+        gsl_method = gsl_odeiv2_step_rkck;
         break;
     case Method::rk8pd:
         gsl_method = gsl_odeiv2_step_rk8pd;
@@ -97,23 +75,25 @@ std::unique_ptr<Solution> Solver::solve(std::shared_ptr<Task> task, Method metho
         break;
     }
 
-    size_t dimension = task->equations_strings.size();
+    size_t dimension = expr_storage->get_dimension();
 
-    gsl_odeiv2_system sys = {Solver::compute_ODEs_right_sides, nullptr /*Solver::jac*/, dimension, task.get()}; // вместо nullptr передавать jacobian
+    gsl_odeiv2_system sys = {Solver::func, Solver::jac, dimension, expr_storage.get()};
 
-    gsl_odeiv2_driver *driver = gsl_odeiv2_driver_alloc_y_new(&sys, gsl_method, task->h0, task->accuracy, task->accuracy);
+    gsl_odeiv2_driver *driver = gsl_odeiv2_driver_alloc_y_new(&sys, gsl_method, taska->h0, taska->accuracy, taska->accuracy);
 
     // Установим минимальный и максимальный шаг
     // gsl_odeiv2_driver_set_hmin(driver, task->accuracy);
     // gsl_odeiv2_driver_set_hmax(driver, 1.0);
     std::unique_ptr<Solution> solution = std::make_unique<Solution>(dimension);
+    solution->add_result_at_point(0, taska->start_conditions);
 
-    double ti = task->t_start;
-    while (ti <= task->t_end)
+    double ti = taska->t_start;
+    while (ti <= taska->t_end)
     {
-        int status_rk4 = gsl_odeiv2_driver_apply(driver, &ti, ti + task->h0, task->result_at_point.data());
 
-        solution->add_result_at_point(ti, task->result_at_point);
+        int status_rk4 = gsl_odeiv2_driver_apply(driver, &ti, ti + taska->h0, expr_storage->result_at_point.data());
+
+        solution->add_result_at_point(ti, expr_storage->result_at_point);
         // if (status_rk4 != GSL_SUCCESS)
         // {
         //     fprintf(stderr, "Ошибка при интегрировании: %s\n", gsl_strerror(status_rk4));
