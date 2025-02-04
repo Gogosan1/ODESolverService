@@ -21,9 +21,12 @@ void Consumer::onMessageReceived(const AMQP::Message &message, uint64_t delivery
 
         std::shared_ptr<Task> task = std::make_shared<Task>();
         Method method;
-        // std::cout << message.body() << "\n";
-        std::string rawMessage(message.body(), message.bodySize());
-        nlohmann::json file = nlohmann::json::parse(rawMessage);
+
+        std::string rawMessage(message.body(), message.bodySize());                                  // Получаем строку с учетом размера
+        rawMessage.erase(std::remove(rawMessage.begin(), rawMessage.end(), '\n'), rawMessage.end()); // Удаляем \n
+        rawMessage.erase(std::remove(rawMessage.begin(), rawMessage.end(), '\r'), rawMessage.end()); // Удаляем \r
+
+        nlohmann::json file = nlohmann::json::parse(rawMessage); // Парсим JSON
 
         std::unique_ptr<JSONHelper> helper = std::make_unique<JSONHelper>();
         helper->upload_from_json(file, task, &method);
@@ -35,8 +38,14 @@ void Consumer::onMessageReceived(const AMQP::Message &message, uint64_t delivery
         std::unique_ptr<Solution> solution = solver.solve(task, method);
 
         std::string json_string = solution->get_data();
+
+        nlohmann::json responseJson = {
+            {"status", "success"},
+            {"message", json_string}};
+
+        std::string responseStr = responseJson.dump();
         // Отправляем ответ в responseQueue
-        channel.publish("", responseQueue, json_string);
+        channel.publish("", responseQueue, responseStr);
 
         // Подтверждаем сообщение
         channel.ack(deliveryTag);

@@ -8,6 +8,8 @@ import java.util.stream.Stream;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.web.bind.annotation.*;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.springframework.amqp.core.Message; 
 
 @RestController
@@ -21,21 +23,36 @@ public class LibraryController {
     }
 
     @PostMapping("/json")
-    public String sendJsonMessage(@RequestBody Map<String, Object> jsonMessage) {
+    public Map<String, Object> sendJsonMessage(@RequestBody Map<String, Object> jsonMessage) {
         // Генерируем уникальный correlationId
         String correlationId = UUID.randomUUID().toString();
         //System.out.println(jsonMessage);
 
         // Отправляем сообщение в `cppQueue`, указывая `responseQueue` для ответа
-        jsonMessage.put("correlationId", correlationId);
+        //jsonMessage.put("correlationId", correlationId);
         rabbitTemplate.convertAndSend("cppQueue", jsonMessage);
 
         Message response = rabbitTemplate.receive("responseQueue", 100000);
         
-        if (response.getBody() != null) {
-            return "Response received: " + response;
-        } else {
-            return "No response received (timeout)";
+
+if (response != null) {
+        try {
+            // Конвертируем строку JSON в Map
+            String jsonString = new String(response.getBody());
+            ObjectMapper objectMapper = new ObjectMapper();
+            return objectMapper.readValue(jsonString, Map.class);
+        } catch (Exception e) {
+            return Map.of("error", "Ошибка парсинга JSON", "details", e.getMessage());
         }
+    } else {
+        return Map.of("error", "Ответ не получен");
+    }
     }
 }
+    //     if (response != null) {
+    //         return "Response received: " + response;
+    //     } else {
+    //         return "No response received (timeout)";
+    //     }
+    // }
+
