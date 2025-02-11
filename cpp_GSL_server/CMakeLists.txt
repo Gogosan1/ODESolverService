@@ -19,7 +19,7 @@ include_directories(${GSL_INCLUDE_DIRS})
 find_package(GSL REQUIRED)
 find_package(nlohmann_json)
 # Добавляем исходные файлы в проект
-set(SOURCES src/main.cpp src/consumer/Consumer.cpp src/helpers/JSONHelper.cpp src/helpers/ExpressionsStorage.cpp src/ode_solver/Solution.cpp src/ode_solver/Solver.cpp)
+set(SOURCES src/main.cpp src/consumer/Consumer.cpp src/helpers/JSONHelper.cpp src/helpers/ExpressionsStorage.cpp src/ode_solver/DoubleSolution.cpp src/ode_solver/Solver.cpp src/helpers/Publisher.cpp)
 #
 # Создаем исполняемый файл
 add_executable(consumer ${SOURCES})

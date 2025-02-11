@@ -16,7 +16,7 @@ services:
 
   spring-app:
     build:
-      context: ./spring_adapter_server/ode_systems
+      context: ./spring_proxy_server/ode_systems
     container_name: spring-app
     ports:
       - "8080:8080"

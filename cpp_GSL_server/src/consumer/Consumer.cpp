@@ -21,19 +21,6 @@ void Consumer::onMessageReceived(const AMQP::Message &message, uint64_t delivery
         std::shared_ptr<Task> task = std::make_shared<Task>();
         Method method;
 
-        //         std::string rawMessage = R"({
-        //   "equations": ["y0", "-100*y1" ],
-        //   "initial_conditions": [1.0, 1.0],
-        //   "h0": 0.01,
-        //   "t_start": 0.0,
-        //   "t_end": 0.1,
-        //   "accuracy": 1e-8,
-        //   "method": "bsimp",
-        //   "jacobi_matrix": [
-        //     ["1.0", "0"],
-        //     ["0", "-100"]
-        //   ]
-        // })";
         std::string rawMessage(message.body(), message.bodySize());
         rawMessage.erase(std::remove(rawMessage.begin(), rawMessage.end(), '\n'), rawMessage.end()); // Удаляем \n
         rawMessage.erase(std::remove(rawMessage.begin(), rawMessage.end(), '\r'), rawMessage.end()); // Удаляем \r
@@ -44,20 +31,8 @@ void Consumer::onMessageReceived(const AMQP::Message &message, uint64_t delivery
         std::shared_ptr<ExpressionsStorage> expr_storage = std::make_shared<ExpressionsStorage>(task);
 
         Solver solver;
-        std::unique_ptr<Solution> solution = solver.solve(expr_storage, method, task);
-
-        std::string json_string = solution->get_data();
-        std::cout << json_string;
-        nlohmann::json responseJson = {
-            {"status", "success"},
-            {"message", json_string}};
-        std::string responseStr = responseJson.dump();
-
-        //  Отправляем ответ в responseQueue
-        channel.publish("", responseQueue, responseStr);
-
-        // // Подтверждаем сообщение
-        channel.ack(deliveryTag);
+        std::shared_ptr<Publisher> publihser = std::make_shared<Publisher>(channel, responseQueue, 10);
+        solver.solve(expr_storage, method, task, publihser);
 
         std::cout << "Response sent to " << responseQueue << ": " << std::endl;
     }

@@ -31,7 +31,7 @@ int Solver::jac(double t, const double y[], double *dfdy, double dfdt[], void *p
 // TODO: определиться лучше постепенно присылать решение или сразу целиком?
 // добавить gsl_odeiv2_driver_set_nmax максимальное количество допустимых шагов
 
-std::unique_ptr<Solution> Solver::solve(std::shared_ptr<ExpressionsStorage> expr_storage, Method method, std::shared_ptr<Task> taska)
+void Solver::solve(std::shared_ptr<ExpressionsStorage> expr_storage, Method method, std::shared_ptr<Task> task, std::shared_ptr<Publisher> publisher)
 {
 
     const gsl_odeiv2_step_type *gsl_method;
@@ -79,28 +79,32 @@ std::unique_ptr<Solution> Solver::solve(std::shared_ptr<ExpressionsStorage> expr
 
     gsl_odeiv2_system sys = {Solver::func, Solver::jac, dimension, expr_storage.get()};
 
-    gsl_odeiv2_driver *driver = gsl_odeiv2_driver_alloc_y_new(&sys, gsl_method, taska->h0, taska->accuracy, taska->accuracy);
+    gsl_odeiv2_driver *driver = gsl_odeiv2_driver_alloc_y_new(&sys, gsl_method, task->h0, task->accuracy, task->accuracy);
 
     // Установим минимальный и максимальный шаг
     // gsl_odeiv2_driver_set_hmin(driver, task->accuracy);
     // gsl_odeiv2_driver_set_hmax(driver, 1.0);
-    std::unique_ptr<Solution> solution = std::make_unique<Solution>(dimension);
-    solution->add_result_at_point(0, taska->start_conditions);
+    std::shared_ptr<DoubleSolution> solution = std::make_shared<DoubleSolution>(dimension);
 
-    double ti = taska->t_start;
-    while (ti <= taska->t_end)
+    solution->add_result_at_point(0, task->start_conditions);
+
+    double ti = task->t_start;
+    while (ti <= task->t_end)
     {
 
-        int status_rk4 = gsl_odeiv2_driver_apply(driver, &ti, ti + taska->h0, expr_storage->result_at_point.data());
+        int status_rk4 = gsl_odeiv2_driver_apply(driver, &ti, ti + task->h0, expr_storage->result_at_point.data());
 
-        solution->add_result_at_point(ti, expr_storage->result_at_point);
         // if (status_rk4 != GSL_SUCCESS)
         // {
         //     fprintf(stderr, "Ошибка при интегрировании: %s\n", gsl_strerror(status_rk4));
         //     break;
         // }
+        solution->add_result_at_point(ti, expr_storage->result_at_point);
+        publisher->sendResults(solution);
     }
 
     gsl_odeiv2_driver_free(driver);
-    return std::move(solution);
+
+    // Финальная отправка
+    publisher->flush(solution);
 }

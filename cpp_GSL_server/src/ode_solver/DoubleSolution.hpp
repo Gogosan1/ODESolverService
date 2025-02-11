@@ -1,17 +1,18 @@
 #pragma once
 #include <string>
 #include <vector>
-#include <nlohmann/json.hpp>
-class Solution
+
+class DoubleSolution
 {
 private:
-    std::vector<std::pair<double, std::vector<double>>> results; // Поддержка int и double
+    std::vector<std::pair<double, std::vector<double>>> results;
     int dimension;
-    std::vector<exprtk::expression<double>> expressions;
-    std::vector<std::vector<exprtk::expression<double>>> jackobi_matrix_expressions;
 
 public:
     void add_result_at_point(double point, std::vector<double> results);
-    Solution(int dimension);
-    std::vector<std::pair<double, std::vector<double>>> get_results();
+    DoubleSolution(int dimension);
+
+    const std::vector<std::pair<double, std::vector<double>>> &getResults() const;
+    void clearBatch(size_t batchSize);
+    size_t getSize() const;
 };

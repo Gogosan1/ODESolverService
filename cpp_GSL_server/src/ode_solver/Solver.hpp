@@ -5,9 +5,10 @@
 #include <gsl/gsl_deriv.h>
 #include <memory>
 #include "../helpers/ExpressionsStorage.hpp"
-#include "Solution.hpp"
+#include "DoubleSolution.hpp"
 #include "Task.hpp"
 #include "EnumMethods.hpp"
+#include "../helpers/Publisher.hpp"
 class Solver
 {
 private:
@@ -15,5 +16,5 @@ private:
     static int jac(double t, const double y[], double *dfdy, double dfdt[], void *params);
 
 public:
-    std::unique_ptr<Solution> solve(std::shared_ptr<ExpressionsStorage>, Method method, std::shared_ptr<Task> taska);
+    void solve(std::shared_ptr<ExpressionsStorage>, Method method, std::shared_ptr<Task> taska, std::shared_ptr<Publisher> publisher);
 };

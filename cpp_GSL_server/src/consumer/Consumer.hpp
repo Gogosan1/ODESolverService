@@ -9,8 +9,9 @@
 #include "../helpers/ExpressionsStorage.hpp"
 #include "../ode_solver/Task.hpp"
 #include "../ode_solver/EnumMethods.hpp"
-#include "../ode_solver/Solution.hpp"
+#include "../ode_solver/DoubleSolution.hpp"
 #include "../ode_solver/Solver.hpp"
+#include "../helpers/Publisher.hpp"
 
 class Consumer
 {
