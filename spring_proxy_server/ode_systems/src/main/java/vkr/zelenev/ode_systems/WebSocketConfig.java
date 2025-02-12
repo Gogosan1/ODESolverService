@@ -1,18 +1,19 @@
-// import org.springframework.context.annotation.Configuration;
-// import org.springframework.web.socket.config.annotation.*;
+package vkr.zelenev.ode_systems;
 
-// @Configuration
-// @EnableWebSocket
-// public class WebSocketConfig implements WebSocketConfigurer {
-//     private final SolutionWebSocketHandler solutionWebSocketHandler;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.socket.config.annotation.*;
 
-//     public WebSocketConfig(SolutionWebSocketHandler solutionWebSocketHandler) {
-//         this.solutionWebSocketHandler = solutionWebSocketHandler;
-//     }
+@Configuration
+@EnableWebSocket
+public class WebSocketConfig implements WebSocketConfigurer {
+    private final SolutionWebSocketHandler solutionWebSocketHandler;
 
-//     @Override
-//     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-//         System.out.println("connection registered!");
-//         registry.addHandler(solutionWebSocketHandler, "/ws/solution").setAllowedOrigins("*");
-//     }
-// }   
+    public WebSocketConfig(SolutionWebSocketHandler solutionWebSocketHandler) {
+        this.solutionWebSocketHandler = solutionWebSocketHandler;
+    }
+
+    @Override
+    public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
+        registry.addHandler(solutionWebSocketHandler, "/ws/solution").setAllowedOrigins("*");
+    }
+}   

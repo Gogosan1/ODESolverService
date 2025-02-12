@@ -5,7 +5,7 @@
 #include <gsl/gsl_deriv.h>
 #include <memory>
 #include "../helpers/ExpressionsStorage.hpp"
-#include "DoubleSolution.hpp"
+#include "SolutionBuffer.hpp"
 #include "Task.hpp"
 #include "EnumMethods.hpp"
 #include "../helpers/Publisher.hpp"

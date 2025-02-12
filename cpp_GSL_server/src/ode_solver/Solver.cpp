@@ -28,7 +28,6 @@ int Solver::jac(double t, const double y[], double *dfdy, double dfdt[], void *p
     return GSL_SUCCESS;
 }
 
-// TODO: определиться лучше постепенно присылать решение или сразу целиком?
 // добавить gsl_odeiv2_driver_set_nmax максимальное количество допустимых шагов
 
 void Solver::solve(std::shared_ptr<ExpressionsStorage> expr_storage, Method method, std::shared_ptr<Task> task, std::shared_ptr<Publisher> publisher)
@@ -82,9 +81,9 @@ void Solver::solve(std::shared_ptr<ExpressionsStorage> expr_storage, Method meth
     gsl_odeiv2_driver *driver = gsl_odeiv2_driver_alloc_y_new(&sys, gsl_method, task->h0, task->accuracy, task->accuracy);
 
     // Установим минимальный и максимальный шаг
-    // gsl_odeiv2_driver_set_hmin(driver, task->accuracy);
+    // gsl_odeiv2_driver_set_hmin(driver, );
     // gsl_odeiv2_driver_set_hmax(driver, 1.0);
-    std::shared_ptr<DoubleSolution> solution = std::make_shared<DoubleSolution>(dimension);
+    std::shared_ptr<SolutionBuffer> solution = std::make_shared<SolutionBuffer>(dimension, task->taskID);
 
     solution->add_result_at_point(0, task->start_conditions);
 

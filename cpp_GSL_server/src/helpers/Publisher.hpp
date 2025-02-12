@@ -2,7 +2,7 @@
 #include <string>
 #include <amqpcpp.h>
 #include <amqpcpp/libev.h>
-#include "../ode_solver/DoubleSolution.hpp"
+#include "../ode_solver/SolutionBuffer.hpp"
 #include <nlohmann/json.hpp>
 class Publisher
 {
@@ -13,11 +13,11 @@ private:
     bool debugMode;
 
 public:
-    Publisher(AMQP::TcpChannel &channel, const std::string &queue, size_t batchSize);
+    Publisher(AMQP::TcpChannel &channel, const std::string &queue, size_t batchSize = 0);
 
-    void sendResults( std::shared_ptr<DoubleSolution> solution);
-    void flush( std::shared_ptr<DoubleSolution> solution);
+    void sendResults(std::shared_ptr<SolutionBuffer> solution);
+    void flush(std::shared_ptr<SolutionBuffer> solution);
 
-   // void setDebugMode(bool mode);
-   // void setBatchSize(size_t size);
+    // void setDebugMode(bool mode);
+    // void setBatchSize(size_t size);
 };

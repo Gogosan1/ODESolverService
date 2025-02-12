@@ -1,33 +1,26 @@
 # syntax=docker/dockerfile:1
 
-FROM eclipse-temurin:21-jdk-jammy as deps
+# 1️⃣ Стадия сборки: скачивание зависимостей и упаковка .jar
+FROM eclipse-temurin:21-jdk-jammy AS build
 
-WORKDIR /build
+WORKDIR /app
 
-# Copy the mvnw wrapper with executable permissions.
-COPY --chmod=0755 mvnw mvnw
-COPY .mvn/ .mvn/
+# Копируем только файлы, нужные для скачивания зависимостей
+COPY mvnw .
+COPY .mvn .mvn
+COPY pom.xml .
 
-RUN --mount=type=bind,source=pom.xml,target=pom.xml \
-    --mount=type=cache,target=/root/.m2 ./mvnw dependency:go-offline -DskipTests
+RUN chmod +x mvnw && ./mvnw dependency:go-offline -DskipTests
 
-FROM deps as package
+# Копируем исходный код после кеширования зависимостей
+COPY src/ src/
+RUN ./mvnw package -DskipTests && \
+    cp target/*.jar app.jar
 
-WORKDIR /build
-
-COPY ./src src/
-RUN --mount=type=bind,source=pom.xml,target=pom.xml \
-    --mount=type=cache,target=/root/.m2 \
-    ./mvnw package -DskipTests && \
-    mv target/$(./mvnw help:evaluate -Dexpression=project.artifactId -q -DforceStdout)-$(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout).jar target/app.jar
-
-FROM package as extract
-
-WORKDIR /build
-
-RUN java -Djarmode=layertools -jar target/app.jar extract --destination target/extracted
-
+# 2️⃣ Финальный минимизированный образ: только JRE и готовый .jar
 FROM eclipse-temurin:21-jre-jammy AS final
+
+WORKDIR /app
 
 ARG UID=10001
 RUN adduser \
@@ -38,14 +31,12 @@ RUN adduser \
     --no-create-home \
     --uid "${UID}" \
     appuser
+
 USER appuser
 
-# Copy the executable from the "package" stage.
-COPY --from=extract build/target/extracted/dependencies/ ./
-COPY --from=extract build/target/extracted/spring-boot-loader/ ./
-COPY --from=extract build/target/extracted/snapshot-dependencies/ ./
-COPY --from=extract build/target/extracted/application/ ./
+# Копируем только скомпилированный JAR
+COPY --from=build /app/app.jar .
 
 EXPOSE 8080
 
-ENTRYPOINT [ "java", "org.springframework.boot.loader.launch.JarLauncher" ]
+ENTRYPOINT ["java", "-jar", "app.jar"]
