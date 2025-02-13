@@ -31,3 +31,10 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
+
+  # julia-server:
+  #   build: ./julia
+  #   depends_on:
+  #     - rabbitmq
+  #   environment:
+  #     RABBITMQ_HOST: rabbitmq

@@ -37,7 +37,7 @@ void Consumer::onMessageReceived(const AMQP::Message &message, uint64_t delivery
             std::shared_ptr<Publisher> publihser = std::make_shared<Publisher>(channel, responseQueue);
             solver.solve(expr_storage, method, task, publihser);
 
-            // Подтверждаем сообщение
+            // Подтверждаем выполнение задачи
             channel.ack(deliveryTag);
             std::cout << "Response sent to " << responseQueue << ": " << std::endl;
         }
