@@ -184,7 +184,3 @@ end
 #   "jacobi_matrix": [[1.0, 0.0], [0.0, -100.0]]
 # }
 # """
-
-# task_dict = JSON.parse(json_input)
-
-# println(solve_ode(task_dict))
