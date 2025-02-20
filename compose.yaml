@@ -32,9 +32,12 @@ services:
       rabbitmq:
         condition: service_healthy
 
-  # julia-server:
-  #   build: ./julia
-  #   depends_on:
-  #     - rabbitmq
-  #   environment:
-  #     RABBITMQ_HOST: rabbitmq
+  julia-server:
+    build:
+      context: ./Julia_server
+    container_name: julia-listener
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      RABBITMQ_HOST: "amqp://guest:guest@rabbitmq:5672"

@@ -22,28 +22,26 @@ public class LibraryController {
     }
 
     @PostMapping("/solve")
-    public ResponseEntity<String> sendTask(@RequestBody Map<String, Object> jsonMessage) {
+    public ResponseEntity<String> sendTask(@RequestBody Map<String, Object> jsonMessage)  throws Exception{
 
         //String taskID = UUID.randomUUID().toString();
         //jsonMessage.put("taskID", taskID);
+
+        String method = (String) jsonMessage.get("solver");
         
-        rabbitTemplate.convertAndSend("cppQueue", jsonMessage);
+
+        switch (method.toLowerCase()) {
+            case "cpp": 
+                rabbitTemplate.convertAndSend("cppQueue", jsonMessage);
+                break;
+            case "julia":
+                rabbitTemplate.convertAndSend("juliaQueue", jsonMessage);
+                break;
+            default:
+                throw new Exception("This solver does not exitsts!");
+        }
+
 
         return ResponseEntity.ok("Задача отправлена. ID: ");
-
-        // Message response = rabbitTemplate.receive("responseQueue", 100000);
-
-        // if (response != null) {
-        //     try {
-        //         // Конвертируем строку JSON в Map
-        //         String jsonString = new String(response.getBody());
-        //         ObjectMapper objectMapper = new ObjectMapper();
-        //         return objectMapper.readValue(jsonString, Map.class);
-        //     } catch (Exception e) {
-        //         return Map.of("error", "Ошибка парсинга JSON", "details", e.getMessage());
-        //     }
-        // } else {
-        //     return Map.of("error", "Ответ не получен");
-        // }
     }
 }

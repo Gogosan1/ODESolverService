@@ -26,6 +26,11 @@ public class RabbitConfig {
         return new Queue("responseQueue", true);
     }
     @Bean
+    public Queue juliaQueue(){
+        return new Queue("juliaQueue", true);
+    }
+    
+    @Bean
     public Jackson2JsonMessageConverter jackson2JsonMessageConverter() {
         return new Jackson2JsonMessageConverter();
     }
