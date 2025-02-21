@@ -11,7 +11,9 @@
 ![Схема системы ПО](https://github.com/user-attachments/assets/ef51008a-f6eb-40ef-af63-251c53e1cb1e)
 
 > [!NOTE]
-> <span style="color: green;">Зеленым на схеме отображен сам модуль</span>
+> Цветом выделена та часть системы, которая реализована мной
+> 
+<span style="color: green;">Зеленым на схеме отображен сам модуль</span>
 
 > [!NOTE]
 > <span style="color: yellow;">Желтым отображены подключенные численные решатели</span>
