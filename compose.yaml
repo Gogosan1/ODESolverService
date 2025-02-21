@@ -16,7 +16,7 @@ services:
 
   spring-app:
     build:
-      context: ./spring_proxy_server/ode_systems
+      context: ./API_gateway
     container_name: spring-app
     ports:
       - "8080:8080"
@@ -24,10 +24,10 @@ services:
       rabbitmq:
         condition: service_healthy
 
-  cpp-listener:
+  cpp-server:
     build:
       context: ./cpp_GSL_server
-    container_name: cpp-listener
+    container_name: cpp-solver
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -35,7 +35,7 @@ services:
   julia-server:
     build:
       context: ./Julia_server
-    container_name: julia-listener
+    container_name: julia-solver
     depends_on:
       rabbitmq:
         condition: service_healthy
