@@ -1,0 +1,3 @@
+[submodule "cpp_GSL_server/cpp_GSL_server/exprtk"]
+	path = cpp_GSL_server/cpp_GSL_server/exprtk
+	url = git@github.com:ArashPartow/exprtk.git
