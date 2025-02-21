@@ -12,6 +12,8 @@
 
 > [!NOTE]
 > <span style="color: green; font-weight: bold;">Зеленым на схеме отображен сам модуль</span>
+>
+> [!NOTE]
 > <span style="color: yellow; font-weight: bold;">Желтым отображены подключенные численные решатели</span>
 
 **spring boot server (API GATEWAY)**
