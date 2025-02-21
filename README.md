@@ -8,7 +8,7 @@
 
 Результатом работы будет являтся программный модуль, к которому возможно подключать любые разработанные библиотеки численных решателей.
 
-![Схема системы](https://github.com/Gogosan1/ODESolverService/blob/main/Images/%D1%81%D0%B8%D1%81%D1%82%D0%B5%D0%BC%D0%B0.png)
+![Схема системы](/Images/system.png)
 
 > [!NOTE]
 > <span style="color: green; font-weight: bold;">Зеленым на схеме отображен сам модуль</span>
