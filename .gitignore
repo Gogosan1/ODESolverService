@@ -103,6 +103,7 @@ test/test_runner
 # Built Visual Studio Code Extensions
 *.vsix
 
+Картинки/
 cpp_GSL_server/expertk/
 
 .env

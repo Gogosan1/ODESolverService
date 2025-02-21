@@ -8,14 +8,13 @@
 
 Результатом работы будет являтся программный модуль, к которому возможно подключать любые разработанные библиотеки численных решателей.
 
-![Схема системы](app/Images/system.png)
-<image src="app/Images/system.png" alt="Описание изображения">
+![Схема системы](/Images/system.png)
 
 > [!NOTE]
-> <span style="color: green; font-weight: bold;">Зеленым на схеме отображен сам модуль</span>
+> <span style="color: green;">Зеленым на схеме отображен сам модуль</span>
 
 > [!NOTE]
-> <span style="color: yellow; font-weight: bold;">Желтым отображены подключенные численные решатели</span>
+> <span style="color: yellow;">Желтым отображены подключенные численные решатели</span>
 
 **spring boot server (API GATEWAY)**
 
