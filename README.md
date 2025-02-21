@@ -8,8 +8,7 @@
 
 Результатом работы будет являтся программный модуль, к которому возможно подключать любые разработанные библиотеки численных решателей.
 
-![Схема системы](app/Images/system.png)
-<image src="app/Images/system.png" alt="Описание изображения">
+![Схема системы ПО](https://github.com/user-attachments/assets/ef51008a-f6eb-40ef-af63-251c53e1cb1e)
 
 > [!NOTE]
 > <span style="color: green; font-weight: bold;">Зеленым на схеме отображен сам модуль</span>
