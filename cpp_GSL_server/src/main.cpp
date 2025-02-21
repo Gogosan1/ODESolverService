@@ -1,8 +1,16 @@
 #include "consumer/Consumer.hpp"
+#include <cstdlib>
 
 int main()
 {
-    Consumer consumer("cppQueue", "responseQueue");
+    std::string rabbit_username = std::getenv("RABBITMQ_USERNAME");
+    std::string rabbit_password = std::getenv("RABBITMQ_PASSWORD");
+    std::string rabbit_host = std::getenv("RABBITMQ_HOST");
+    std::string rabbit_port = std::getenv("RABBITMQ_PORT");
+    const std::string connection_string = "amqp://" + std::string(rabbit_username) + ":" + std::string(rabbit_password) + "@" + std::string(rabbit_host) + ":" + std::string(rabbit_port);
+    const std::string cpp_queue = std::getenv("CPP_QUEUE");
+    const std::string response_queue = std::getenv("RESPONSE_QUEUE");
+    Consumer consumer(cpp_queue, response_queue, connection_string);
     consumer.start(); // Запуск слушателя
 
     return 0;
@@ -25,15 +33,3 @@ int main()
 //             ["a21", "a22", "a23"],
 //             ["a31", "a32", "a33"]
 //         ]
-
-// // rk2,
-// // rk4, works ok
-// // rkf45,
-// // rkck,
-// // rk8pd,
-// // rk1imp, требует якобиана
-// // rk2imp, требует якобиана
-// // rk4imp, требует якобиана
-// // bsimp, требует якобиана
-// // msadams,
-// // msbdf, требует якобиана

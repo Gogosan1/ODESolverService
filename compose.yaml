@@ -3,7 +3,7 @@ services:
     image: rabbitmq:3-management
     container_name: rabbitmq
     ports:
-      - "5672:5672" # Основной AMQP порт
+      - "${RABBITMQ_PORT}:5672" # Основной AMQP порт
       - "15672:15672" # Web UI
     healthcheck:
       test: ["CMD", "rabbitmqctl", "status"]
@@ -11,15 +11,17 @@ services:
       timeout: 10s
       retries: 5
     environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_DEFAULT_USER: "${RABBITMQ_USERNAME}"
+      RABBITMQ_DEFAULT_PASS: "${RABBITMQ_PASSWORD}"
 
   spring-app:
     build:
       context: ./API_gateway
     container_name: spring-app
     ports:
-      - "8080:8080"
+      - "${SPRING_PORT}:8080"
+    env_file:
+      - .env
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -31,6 +33,8 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
+    env_file:
+      - .env
 
   julia-server:
     build:
@@ -39,5 +43,7 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
-    environment:
-      RABBITMQ_HOST: "amqp://guest:guest@rabbitmq:5672"
+    env_file:
+      - .env
+    # environment:
+    #   RABBITMQ_HOST: "amqp://${RABBITMQ_USERNAME}:${RABBITMQ_PASSWORD}@${RABBITMQ_HOST}:${RABBITMQ_PORT}"

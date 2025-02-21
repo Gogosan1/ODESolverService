@@ -1,7 +1,7 @@
 #include "Consumer.hpp"
 
-Consumer::Consumer(const std::string &queue, const std::string &responseQueue)
-    : loop(EV_DEFAULT), handler(loop), connection(&handler, AMQP::Address("amqp://guest:guest@rabbitmq:5672/")),
+Consumer::Consumer(const std::string &queue, const std::string &responseQueue, const std::string& address)
+    : loop(EV_DEFAULT), handler(loop), connection(&handler, AMQP::Address(address /*"amqp://guest:guest@rabbitmq:5672/"*/)),
       channel(&connection), queueName(queue), responseQueue(responseQueue)
 {
 
@@ -10,6 +10,8 @@ Consumer::Consumer(const std::string &queue, const std::string &responseQueue)
 
     // Объявляем очередь для ответов
     channel.declareQueue(responseQueue, AMQP::durable);
+    
+    std::cout <<"✅ CPP сервер запущен и слушает cppQueue...";
 }
 
 // Метод обработки сообщений
@@ -52,6 +54,6 @@ void Consumer::start()
 {
     channel.consume(queueName).onReceived([this](const AMQP::Message &message, uint64_t deliveryTag, bool redelivered)
                                           { this->onMessageReceived(message, deliveryTag, redelivered); });
-
+                            
     ev_run(loop, 0); // Запускаем event loop
 }

@@ -1,6 +1,5 @@
 package vkr.zelenev.ode_systems;
 
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.web.socket.*;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -9,17 +8,21 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.*;
 import org.springframework.stereotype.Component;
 import org.springframework.amqp.core.Message;
+import org.springframework.beans.factory.annotation.Value;
 
 @Component
 public class SolutionWebSocketHandler extends TextWebSocketHandler {
-    private final RabbitTemplate rabbitTemplate;
+    
+    private static final String TASK_ID_KEY = "taskId";
     private final ObjectMapper objectMapper;
     private final Set<WebSocketSession> sessions = Collections.synchronizedSet(new HashSet<>());
     private final Map<String, Set<WebSocketSession>> taskSubscriptions = Collections.synchronizedMap(new HashMap<>());
 
-    public SolutionWebSocketHandler(RabbitTemplate rabbitTemplate, ObjectMapper objectMapper) {
-        this.rabbitTemplate = rabbitTemplate;
+    private QueueConfig queueConfig;
+
+    public SolutionWebSocketHandler(ObjectMapper objectMapper, QueueConfig queueConfig) {
         this.objectMapper = objectMapper;
+        this.queueConfig = queueConfig;
     }
 
     @Override
@@ -35,14 +38,15 @@ public class SolutionWebSocketHandler extends TextWebSocketHandler {
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
         JsonNode json = objectMapper.readTree(message.getPayload());
-        if (json.has("taskId")) {
-            String taskId = json.get("taskId").asText();
+         
+        if (json.has(TASK_ID_KEY)) {
+            String taskId = json.get(TASK_ID_KEY).asText();
             taskSubscriptions.computeIfAbsent(taskId, k -> Collections.synchronizedSet(new HashSet<>())).add(session);
         }
     }
 
     // 🔹 Автоматически получаем ВСЕ сообщения из RabbitMQ в виде `Message` объекта
-    @RabbitListener(queues = "responseQueue")
+    @RabbitListener(queues = "#{queueConfig.getResponseQueueName()}")
     public void sendUpdateToSubscribers(Message message) {
         try {
             // ✅ Декодируем тело сообщения в строку
@@ -50,12 +54,12 @@ public class SolutionWebSocketHandler extends TextWebSocketHandler {
             
             // ✅ Парсим JSON
             JsonNode json = objectMapper.readTree(jsonString);
-            if (!json.has("taskId")) {
+            if (!json.has(TASK_ID_KEY)) {
                 System.err.println("❌ Ошибка: В JSON нет taskId! " + jsonString);
                 return;
             }
 
-            String taskId = json.get("taskId").asText();
+            String taskId = json.get(TASK_ID_KEY).asText();
             Set<WebSocketSession> sessions = taskSubscriptions.get(taskId);
             if (sessions != null) {
                 for (WebSocketSession session : sessions) {

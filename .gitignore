@@ -104,3 +104,5 @@ test/test_runner
 *.vsix
 
 cpp_GSL_server/expertk/*
+
+.env

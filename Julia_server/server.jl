@@ -121,18 +121,21 @@ end
 # 🔹 Подключаемся к RabbitMQ
 
 # Параметры подключения
-port = AMQPClient.AMQP_DEFAULT_PORT
-login = "guest"  # Логин, по умолчанию "guest"
-password = "guest"  # Пароль, по умолчанию "guest"
+port = parse(Int, ENV["RABBITMQ_PORT"])#AMQPClient.AMQP_DEFAULT_PORT
+login = ENV["RABBITMQ_USERNAME"]  # Логин, по умолчанию "guest"
+password = ENV["RABBITMQ_PASSWORD"]  # Пароль, по умолчанию "guest"
+REQUEST_QUEUE = ENV["JULIA_QUEUE"]
+RESPONSE_QUEUE = ENV["RESPONSE_QUEUE"]
+host = ENV["RABBITMQ_HOST"]
+println(host)
+
 auth_params = Dict{String,Any}("MECHANISM" => "AMQPLAIN", "LOGIN" => login, "PASSWORD" => password)
 
 # Создание подключения к RabbitMQ
-conn = connection(; virtualhost="/", host="rabbitmq", port=port, auth_params=auth_params)
+conn = connection(; virtualhost="/", host=host, port=port, auth_params=auth_params)
 
 channel1 = channel(conn, AMQPClient.UNUSED_CHANNEL, true)
 
-REQUEST_QUEUE = "juliaQueue"
-RESPONSE_QUEUE = "responseQueue"
 AMQPClient.queue_declare(channel1, REQUEST_QUEUE, durable=true)
 AMQPClient.queue_declare(channel1, RESPONSE_QUEUE, durable=true)
 

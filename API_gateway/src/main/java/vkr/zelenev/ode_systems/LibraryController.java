@@ -9,18 +9,26 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import vkr.zelenev.ode_systems.QueueConfig;
+
+import org.springframework.beans.factory.annotation.Value;
+
 import org.springframework.amqp.core.Message;
 
 @RestController
 @RequestMapping("/task")
 public class LibraryController {
 
+   private final QueueConfig queueConfig;
+
     private final RabbitTemplate rabbitTemplate;
 
-    public LibraryController(RabbitTemplate rabbitTemplate) {
+    public LibraryController(RabbitTemplate rabbitTemplate, QueueConfig queueConfig) {
         this.rabbitTemplate = rabbitTemplate;
+        this.queueConfig = queueConfig;
     }
 
+    
     @PostMapping("/solve")
     public ResponseEntity<String> sendTask(@RequestBody Map<String, Object> jsonMessage)  throws Exception{
 
@@ -32,10 +40,10 @@ public class LibraryController {
 
         switch (method.toLowerCase()) {
             case "cpp": 
-                rabbitTemplate.convertAndSend("cppQueue", jsonMessage);
+                rabbitTemplate.convertAndSend(queueConfig.getCppQueueName(), jsonMessage);
                 break;
             case "julia":
-                rabbitTemplate.convertAndSend("juliaQueue", jsonMessage);
+                rabbitTemplate.convertAndSend(queueConfig.getJuliaQueueName(), jsonMessage);
                 break;
             default:
                 throw new Exception("This solver does not exitsts!");

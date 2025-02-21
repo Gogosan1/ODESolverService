@@ -16,7 +16,7 @@
 class Consumer
 {
 public:
-    Consumer(const std::string &queueName, const std::string &responseQueue);
+    Consumer(const std::string &queueName, const std::string &responseQueue, const std::string& address);
     void start();
 
 private:
