@@ -38,13 +38,16 @@ ODESolverService/
 │ │ └── test/ #Тесты для шлюза
 │ ├── pom.xml #Maven файл для конфигурации
 | |── Dockerfile #Докер образ для шлюза
+|
 ├── Julia_server/
 │ ├── server.jl #Основной код решателя ОДУ на julia
 │ └── Dockerfile #Докер образ для julia server
+|
 ├── cpp_GSL_server/
 │ ├── src/ #Исходный код сервера решателя на C++
 │ ├── CMakeLists.txt #Файл конфигурации для сборки проекта с помощью CMake.
 │ └── Dockerfile #Докер образ для C++ server
+|
 ├── .env.example #Пример файла окружения с переменными среды.
 ├── README.md
 ├── compose.yaml #Файл конфигурации для Docker Compose, описывающий, как запускать многоконтейнерное приложение.
