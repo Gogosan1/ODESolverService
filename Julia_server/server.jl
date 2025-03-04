@@ -1,4 +1,4 @@
-using DifferentialEquations, AMQPClient, JSON3, Symbolics, JSON
+using DifferentialEquations, AMQPClient, Symbolics, JSON #, Libc
 
 # 🔹 Функция выбора метода по строке
 function get_solver(method_name)
@@ -101,26 +101,24 @@ function solve_ode(task::Dict)
 
         sol = solve(prob, method, reltol=accuracy, dt=h0)
 
-        # Преобразуем результат в JSON3
+        # return Dict(
+        #     "taskId" => task["taskId"],
+        #     "solution" => [Dict("t" => t, "y" => y) for (t, y) in zip(sol.t, sol.u)]
+        # )
         result = Dict(
             "taskId" => task["taskId"],
             "solution" => [
                 Dict("t" => t, "y" => y) for (t, y) in zip(sol.t, sol.u)
             ]
         )
-        return JSON3.write(result; indent=4)
-        # return Dict("taskId" => task["taskId"],
-        #     "solution" => [Dict("t" => t, "y" => y) for (t, y) in zip(sol.t, sol.u)])
+        return JSON.json(result)
+
     catch e
         return Dict("taskId" => task["taskId"], "error" => "Ошибка в вычислениях", "details" => string(e))
     end
 end
 
-
-
 # 🔹 Подключаемся к RabbitMQ
-
-# Параметры подключения
 port = parse(Int, ENV["RABBITMQ_PORT"])#AMQPClient.AMQP_DEFAULT_PORT
 login = ENV["RABBITMQ_USERNAME"]  # Логин, по умолчанию "guest"
 password = ENV["RABBITMQ_PASSWORD"]  # Пароль, по умолчанию "guest"
@@ -168,10 +166,10 @@ function process_message(msg)
 end
 
 # Бесконечный цикл обработки сообщений
+basic_consume(channel1, REQUEST_QUEUE, process_message)
+
 while true
-    msg = basic_get(channel1, REQUEST_QUEUE, false)
-    process_message(msg)
-    sleep(0.5)  # Небольшая пауза для предотвращения перегрузки
+    sleep(0.5)
 end
 
 # json_input = """
