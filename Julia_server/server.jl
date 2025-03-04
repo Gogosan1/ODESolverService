@@ -114,7 +114,7 @@ function solve_ode(task::Dict)
         return JSON.json(result)
 
     catch e
-        return Dict("taskId" => task["taskId"], "error" => "Ошибка в вычислениях", "details" => string(e))
+        return JSON.json(Dict("taskId" => task["taskId"], "error" => "Ошибка в вычислениях", "details" => string(e)))
     end
 end
 
