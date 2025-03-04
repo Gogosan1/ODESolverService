@@ -12,11 +12,12 @@
 #include "../ode_solver/EnumMethods.hpp"
 #include "../ode_solver/Solver.hpp"
 #include "../helpers/Publisher.hpp"
+#include <mutex>
 
 class Consumer
 {
 public:
-    Consumer(const std::string &queueName, const std::string &responseQueue, const std::string& address);
+    Consumer(const std::string &queueName, const std::string &responseQueue, const std::string &address);
     void start();
 
 private:
@@ -27,6 +28,8 @@ private:
     AMQP::TcpChannel channel;
     std::string queueName;
     std::string responseQueue;
+    std::mutex ackMutex;
+    std::mutex publishMutex;
 
     void onMessageReceived(const AMQP::Message &message, uint64_t deliveryTag, bool redelivered);
 };

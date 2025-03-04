@@ -1,6 +1,6 @@
 #include "JSONHelper.hpp"
 
-void JSONHelper::upload_from_json(nlohmann::json file, std::shared_ptr<Task> task, Method *method)
+void JSONHelper::upload_from_json(nlohmann::json file, Task *task, Method *method)
 {
     // TODO::Add lambdas convert / add validation
     task->equations_strings = file["equations"].get<std::vector<std::string>>();

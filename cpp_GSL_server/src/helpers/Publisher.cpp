@@ -1,12 +1,13 @@
 #include "Publisher.hpp"
-// #include <iostream>
-Publisher::Publisher(AMQP::TcpChannel &channel, const std::string &queue, size_t batchSize)
-    : channel(channel), queue(queue), batchSize(batchSize), debugMode(false)
+
+Publisher::Publisher(AMQP::TcpChannel &channel, const std::string &queue, std::mutex *mutex, size_t batchSize)
+    : channel(channel), queue(queue), batchSize(batchSize), publishMutex(mutex), debugMode(false)
 {
 }
 
 void Publisher::sendResults(std::shared_ptr<SolutionBuffer> solution)
 {
+    std::lock_guard<std::mutex> lock(*publishMutex);
     // используется 1 раз, чтобы понять сколько результатов отправлять в одном чанке
     if (batchSize == 0)
     {
@@ -44,6 +45,7 @@ void Publisher::sendResults(std::shared_ptr<SolutionBuffer> solution)
 
 void Publisher::flush(std::shared_ptr<SolutionBuffer> solution)
 {
+    std::lock_guard<std::mutex> lock(*publishMutex);
     nlohmann::json message;
     message["status"] = "done";
     message["steps"] = nlohmann::json::array();

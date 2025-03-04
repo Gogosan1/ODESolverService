@@ -1,6 +1,6 @@
 #include "ExpressionsStorage.hpp"
 
-ExpressionsStorage::ExpressionsStorage(std::shared_ptr<Task> task)
+ExpressionsStorage::ExpressionsStorage(Task* task)
 {
 
     dimension = task->start_conditions.size();

@@ -16,6 +16,6 @@ public:
     std::vector<exprtk::expression<double>> expressions;
     std::vector<std::vector<exprtk::expression<double>>> jacobi_matrix_expressions;
     std::vector<double> result_at_point;
-    ExpressionsStorage(std::shared_ptr<Task> task);
+    ExpressionsStorage(Task *task);
     int get_dimension();
 };

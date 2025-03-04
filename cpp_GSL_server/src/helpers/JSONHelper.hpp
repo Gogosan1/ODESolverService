@@ -11,5 +11,5 @@ private:
     Method stringToMethod(const std::string &method);
 
 public:
-    void upload_from_json(nlohmann::json, std::shared_ptr<Task>, Method* method);
+    void upload_from_json(nlohmann::json, Task*, Method* method);
 };

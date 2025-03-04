@@ -9,6 +9,7 @@
 #include "Task.hpp"
 #include "EnumMethods.hpp"
 #include "../helpers/Publisher.hpp"
+
 class Solver
 {
 private:
@@ -16,5 +17,5 @@ private:
     static int jac(double t, const double y[], double *dfdy, double dfdt[], void *params);
 
 public:
-    void solve(std::shared_ptr<ExpressionsStorage>, Method method, std::shared_ptr<Task> taska, std::shared_ptr<Publisher> publisher);
+    void solve(ExpressionsStorage *, Method method, Task *taska, Publisher *publisher);
 };

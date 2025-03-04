@@ -30,7 +30,7 @@ int Solver::jac(double t, const double y[], double *dfdy, double dfdt[], void *p
 
 // добавить gsl_odeiv2_driver_set_nmax максимальное количество допустимых шагов
 
-void Solver::solve(std::shared_ptr<ExpressionsStorage> expr_storage, Method method, std::shared_ptr<Task> task, std::shared_ptr<Publisher> publisher)
+void Solver::solve(ExpressionsStorage *expr_storage, Method method, Task *task, Publisher *publisher)
 {
 
     const gsl_odeiv2_step_type *gsl_method;
@@ -76,7 +76,7 @@ void Solver::solve(std::shared_ptr<ExpressionsStorage> expr_storage, Method meth
 
     size_t dimension = expr_storage->get_dimension();
 
-    gsl_odeiv2_system sys = {Solver::func, Solver::jac, dimension, expr_storage.get()};
+    gsl_odeiv2_system sys = {Solver::func, Solver::jac, dimension, expr_storage};
 
     gsl_odeiv2_driver *driver = gsl_odeiv2_driver_alloc_y_new(&sys, gsl_method, task->h0, task->accuracy, task->accuracy);
 
