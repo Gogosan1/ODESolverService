@@ -1,5 +1,5 @@
 # Используем официальный образ Ubuntu
-FROM ubuntu:20.04
+FROM ubuntu:25.04
 
 # Устанавливаем временную зону на Новосибирск без запроса
 RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y \

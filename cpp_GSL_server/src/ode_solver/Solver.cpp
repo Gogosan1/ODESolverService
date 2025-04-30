@@ -80,10 +80,12 @@ void Solver::solve(ExpressionsStorage *expr_storage, Method method, Task *task, 
 
     gsl_odeiv2_driver *driver = gsl_odeiv2_driver_alloc_y_new(&sys, gsl_method, task->h0, task->accuracy, task->accuracy);
 
-    // Установим минимальный и максимальный шаг
-    // gsl_odeiv2_driver_set_hmin(driver, );
-    // gsl_odeiv2_driver_set_hmax(driver, 1.0);
-    std::shared_ptr<SolutionBuffer> solution = std::make_shared<SolutionBuffer>(dimension, task->taskID);
+    // Установим минимальный и максимальный шаг и  максимальное количество шагов
+    gsl_odeiv2_driver_set_hmin(driver, task->accuracy * 1e-2);
+    gsl_odeiv2_driver_set_hmax(driver, (task->t_end - task->t_start) / 100.0);
+    gsl_odeiv2_driver_set_nmax(driver, 1e6);
+
+    std::shared_ptr<SolutionBuffer> solution = std::make_shared<SolutionBuffer>(dimension, task->sessionId);
 
     solution->add_result_at_point(0, task->start_conditions);
 
@@ -91,13 +93,14 @@ void Solver::solve(ExpressionsStorage *expr_storage, Method method, Task *task, 
     while (ti <= task->t_end)
     {
 
-        int status_rk4 = gsl_odeiv2_driver_apply(driver, &ti, ti + task->h0, expr_storage->result_at_point.data());
+        int status = gsl_odeiv2_driver_apply(driver, &ti, ti + task->h0, expr_storage->result_at_point.data());
 
-        // if (status_rk4 != GSL_SUCCESS)
-        // {
-        //     fprintf(stderr, "Ошибка при интегрировании: %s\n", gsl_strerror(status_rk4));
-        //     break;
-        // }
+        if (status != GSL_SUCCESS)
+        {
+            throw std::runtime_error("Integration error at t = " + std::to_string(ti) +
+                                     ": " + gsl_strerror(status));
+        }
+
         solution->add_result_at_point(ti, expr_storage->result_at_point);
         publisher->sendResults(solution);
     }

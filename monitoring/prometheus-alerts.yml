@@ -1,0 +1,38 @@
+groups:
+  - name: system-alerts
+    rules:
+      - alert: SpringBootDown
+        expr: up{job="spring-app"} == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Spring Boot сервис упал!"
+          description: "Spring Boot недоступен в течение 30 секунд."
+
+      - alert: RabbitMQQueueOverload
+        expr: rabbitmq_queue_messages{queue="cppQueue"} > 100
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Перегрузка cppQueue"
+          description: "В очереди cppQueue больше 100 сообщений за последнюю минуту!"
+
+      - alert: HighCPUCppServer
+        expr: avg by (instance) (rate(node_cpu_seconds_total{mode="idle", job="cpp-server"}[5m])) < 20
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "CPU C++ сервера перегружен!"
+          description: "CPU C++ сервера загружен более чем на 80% в течение 1 минуты!"
+
+      - alert: HighCPUJuliaServer
+        expr: avg by (instance) (rate(node_cpu_seconds_total{mode="idle", job="julia-server"}[5m])) < 20
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "CPU Julia сервера перегружен!"
+          description: "CPU Julia сервера загружен более чем на 80% в течение 1 минуты!"

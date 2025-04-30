@@ -18,9 +18,6 @@ Consumer::Consumer(const std::string &queue, const std::string &responseQueue, c
 void Consumer::onMessageReceived(const AMQP::Message &message, uint64_t deliveryTag, bool redelivered)
 {
 
-    std::mutex ackMutex; // 🔹 Защищает `channel.ack()`
-    std::mutex publishMutex;
-
     futures.push_back(std::async(std::launch::async, [this, &message, deliveryTag]()
                                  {
         try
@@ -58,7 +55,7 @@ void Consumer::onMessageReceived(const AMQP::Message &message, uint64_t delivery
                 channel.ack(deliveryTag);
             }
 
-            std::cout << "Response sent to: " << responseQueue << ". Task id: " << task.taskID <<  std::endl;
+            std::cout << "Response sent to: " << responseQueue << ". Task id: " << task.sessionId <<  std::endl;
         }
         catch (const std::exception &e)
         {

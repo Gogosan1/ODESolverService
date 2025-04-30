@@ -1,0 +1,17 @@
+# version: "3.8"
+# services:
+#   cpp-server:
+#     deploy:
+#       replicas: 2 # 🔹 Автоматически запускает 2 экземпляра C++ сервера при перегрузке
+#       resources:
+#         limits:
+#           cpus: "1"
+#           memory: "512M"
+
+#   julia-server:
+#     deploy:
+#       replicas: 2 # 🔹 Запускает 2 Julia-сервера при высокой нагрузке
+#       resources:
+#         limits:
+#           cpus: "1"
+#           memory: "512M"

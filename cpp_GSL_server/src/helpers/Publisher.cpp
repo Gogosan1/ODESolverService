@@ -14,7 +14,7 @@ void Publisher::sendResults(std::shared_ptr<SolutionBuffer> solution)
         nlohmann::json message;
         message["status"] = "processing";
         message["steps"] = nlohmann::json::array();
-        message["taskId"] = solution->getTaskID();
+        message["sessionId"] = solution->getSessionId();
         for (const auto &step : solution->getResults())
         {
             message["steps"].push_back({{"t", step.first}, {"values", step.second}});
@@ -32,7 +32,7 @@ void Publisher::sendResults(std::shared_ptr<SolutionBuffer> solution)
         nlohmann::json message;
         message["status"] = "processing";
         message["steps"] = nlohmann::json::array();
-        message["taskId"] = solution->getTaskID();
+        message["sessionId"] = solution->getSessionId();
         for (const auto &step : solution->getResults())
         {
             message["steps"].push_back({{"t", step.first}, {"values", step.second}});
@@ -49,7 +49,7 @@ void Publisher::flush(std::shared_ptr<SolutionBuffer> solution)
     nlohmann::json message;
     message["status"] = "done";
     message["steps"] = nlohmann::json::array();
-    message["taskId"] = solution->getTaskID();
+    message["sessionId"] = solution->getSessionId();
     for (const auto &step : solution->getResults())
     {
         message["steps"].push_back({{"t", step.first}, {"values", step.second}});

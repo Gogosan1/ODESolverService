@@ -9,7 +9,7 @@ void JSONHelper::upload_from_json(nlohmann::json file, Task *task, Method *metho
     task->t_start = file["t_start"].get<double>();
     task->t_end = file["t_end"].get<double>();
     task->accuracy = file["accuracy"].get<double>();
-    task->taskID = file["taskId"].get<std::string>();
+    task->sessionId = file["sessionId"].get<std::string>();
     if (file.contains("jacobi_matrix") && file["jacobi_matrix"].is_array())
     {
         for (const auto &row : file["jacobi_matrix"])

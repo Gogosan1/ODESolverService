@@ -5,9 +5,9 @@ void SolutionBuffer::add_result_at_point(double point, std::vector<double> resul
     this->results.emplace_back(point, results);
 }
 
-SolutionBuffer::SolutionBuffer(int dimension, std::string taskID)
+SolutionBuffer::SolutionBuffer(int dimension, std::string sessionId)
 {
-    this->taskID = taskID;
+    this->sessionId = sessionId;
     this->dimension = dimension;
 }
 
@@ -38,7 +38,7 @@ void SolutionBuffer::clearBuffer()
     results.clear();
 }
 
-std::string SolutionBuffer::getTaskID()
+std::string SolutionBuffer::getSessionId()
 {
-    return taskID;
+    return sessionId;
 }
