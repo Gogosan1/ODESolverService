@@ -1,116 +1,4 @@
-using DifferentialEquations, AMQPClient, Symbolics, JSON #, Libc
-
-# 🔹 Функция для решения ОДУ
-function solve_ode(task::Dict)
-    try
-        y0 = Float64.(task["initial_conditions"])
-        tspan = (task["t_start"], task["t_end"])
-        h0 = task["h0"]
-        accuracy = task["accuracy"]
-
-        # Выбираем численный метод
-        method = get_solver(task["method"])
-
-        function f(dy, y, p, t)
-            equations = task["equations"]
-
-            # Создаём символические переменные и подстановочный словарь в одном цикле
-            substitution_dict = Dict()
-            for i in eachindex(y)
-                var = Symbolics.variable(Symbol("y$i"))
-                substitution_dict[var] = y[i]
-            end
-
-            for (i, eq) in enumerate(equations)
-                # Парсим уравнение из строки
-                parsed_eq = Symbolics.parse_expr_to_symbolic(Meta.parse(eq), Main)
-
-                # Подставляем значения в уравнение
-                substituted = Symbolics.substitute(parsed_eq, substitution_dict)
-
-                # Преобразуем символическое выражение в число
-                evaluated = Symbolics.value(substituted)
-
-                dy[i] = evaluated
-            end
-        end
-
-
-        prob = ODEProblem(f, y0, tspan)
-
-        sol = solve(prob, method, reltol=accuracy, dt=h0)
-
-        # return Dict(
-        #     "taskId" => task["taskId"],
-        #     "solution" => [Dict("t" => t, "y" => y) for (t, y) in zip(sol.t, sol.u)]
-        # )
-        result = Dict(
-            "sessionId" => task["sessionId"],
-            "solution" => [
-                Dict("t" => t, "y" => y) for (t, y) in zip(sol.t, sol.u)
-            ]
-        )
-        return JSON.json(result)
-
-    catch e
-        return JSON.json(Dict("sessionId" => task["sessionId"], "error" => "Ошибка в вычислениях", "details" => string(e)))
-    end
-end
-
-# 🔹 Подключаемся к RabbitMQ
-port = parse(Int, ENV["RABBITMQ_PORT"])#AMQPClient.AMQP_DEFAULT_PORT
-login = ENV["RABBITMQ_USERNAME"]  # Логин, по умолчанию "guest"
-password = ENV["RABBITMQ_PASSWORD"]  # Пароль, по умолчанию "guest"
-REQUEST_QUEUE = ENV["JULIA_QUEUE"]
-RESPONSE_QUEUE = ENV["RESPONSE_QUEUE"]
-host = ENV["RABBITMQ_HOST"]
-println(host)
-
-auth_params = Dict{String,Any}("MECHANISM" => "AMQPLAIN", "LOGIN" => login, "PASSWORD" => password)
-
-# Создание подключения к RabbitMQ
-conn = connection(; virtualhost="/", host=host, port=port, auth_params=auth_params)
-
-channel1 = channel(conn, AMQPClient.UNUSED_CHANNEL, true)
-
-AMQPClient.queue_declare(channel1, REQUEST_QUEUE, durable=true)
-AMQPClient.queue_declare(channel1, RESPONSE_QUEUE, durable=true)
-
-
-println("✅ Julia сервер запущен и слушает juliaQueue...")
-
-function process_message(msg)
-    try
-        if msg !== nothing
-            task = JSON.parse(String(msg.data))
-            println("📩 Получена задача: ", task)
-
-            # Решаем систему ОДУ
-            result = solve_ode(task)
-
-            # Отправляем результат
-            println("📤 Отправляем результат в responseQueue")
-            data = convert(Vector{UInt8}, codeunits(result))
-            msg1 = Message(data)
-            basic_publish(channel1, msg1; routing_key=RESPONSE_QUEUE)
-
-            # Подтверждаем обработку
-            basic_ack(channel1, msg.delivery_tag)
-            #else
-            #println("⏳ Ожидание сообщений...")
-        end
-    catch e
-        println("⚠ Ошибка обработки сообщения: ", e)
-    end
-end
-
-# Бесконечный цикл обработки сообщений
-basic_consume(channel1, REQUEST_QUEUE, process_message)
-
-while true
-    sleep(0.5)
-end
-
+using DifferentialEquations, AMQPClient, Symbolics, JSON, MacroTools #, Libc
 
 function get_solver(method_name)
     #Явные методы Рунге-Кутты в таком же порядке как в документации 
@@ -352,3 +240,181 @@ function get_solver(method_name)
         return Tsit5()
     end
 end
+
+function substitute_vars_to_function(expr::Expr, vars::Dict{String,Int})
+    substituted_expr = MacroTools.postwalk(expr) do x
+        if x isa Symbol && haskey(vars, string(x))
+            idx = vars[string(x)]
+            return :(u[$idx])
+        else
+            return x
+        end
+    end
+
+    # Оборачиваем в min(..., 0.0), чтобы получить числовую функцию с нулем в нужный момент
+    wrapped_expr = :(min($substituted_expr, 0.0))
+    return eval(:(u -> $wrapped_expr))
+end
+
+function substitute_vars_to_affect(expr::Expr, vars::Dict{String,Int})
+    substituted_expr = MacroTools.postwalk(expr) do x
+        if x isa Symbol && haskey(vars, string(x))
+            idx = vars[string(x)]
+            return :(integrator.u[$idx])
+        else
+            return x
+        end
+    end
+
+    return eval(:(integrator -> $substituted_expr))
+end
+
+
+
+function build_callbacks(events_json::Vector, num_vars::Int)
+    vars_dict = Dict("y$(i)" => i for i in 1:num_vars)
+    callbacks = []
+
+    for ev in events_json
+        condition_expr = Meta.parse(ev["condition"])
+        affect_expr = Meta.parse(ev["affect"])
+
+        cond_func = substitute_vars_to_function(condition_expr, vars_dict)
+        affect_func = substitute_vars_to_affect(affect_expr, vars_dict)
+
+        condition = (u, t, integrator) -> begin
+        # Выводим информацию о текущем значении y1 и проверке условия
+        println("Step: t = $t, y1 = $(u[1]), Condition: $(Base.invokelatest(cond_func, u))")
+        return Base.invokelatest(cond_func, u)
+    end
+
+    affect! = integrator -> begin
+        # Выводим информацию о срабатывании события
+        println("Event triggered, changing y2 and y1")
+        Base.invokelatest(affect_func, integrator)
+    end
+        # condition = (u, t, integrator) -> Base.invokelatest(cond_func, u)
+        # affect! = integrator -> Base.invokelatest(affect_func, integrator)
+
+        cb = DiscreteCallback(condition, affect!, save_positions=(true, true))
+        push!(callbacks, cb)
+    end
+
+    return CallbackSet(callbacks...)
+end
+
+
+
+
+# 🔹 Функция для решения ОДУ
+function solve_ode(task::Dict)
+    try
+        y0 = Float64.(task["initial_conditions"])
+        tspan = (task["t_start"], task["t_end"])
+        h0 = task["h0"]
+        accuracy = task["accuracy"]
+
+        # Выбираем численный метод
+        method = get_solver(task["method"])
+
+        function f(dy, y, p, t)
+            equations = task["equations"]
+
+            # Создаём символические переменные и подстановочный словарь в одном цикле
+            substitution_dict = Dict()
+            for i in eachindex(y)
+                var = Symbolics.variable(Symbol("y$i"))
+                substitution_dict[var] = y[i]
+            end
+
+            for (i, eq) in enumerate(equations)
+                # Парсим уравнение из строки
+                parsed_eq = Symbolics.parse_expr_to_symbolic(Meta.parse(eq), Main)
+
+                # Подставляем значения в уравнение
+                substituted = Symbolics.substitute(parsed_eq, substitution_dict)
+
+                # Преобразуем символическое выражение в число
+                evaluated = Symbolics.value(substituted)
+
+                dy[i] = evaluated
+            end
+        end
+
+        callbacks = haskey(task, "events") ? build_callbacks(task["events"], length(y0)) : nothing
+
+        prob = ODEProblem(f, y0, tspan)
+        sol = callbacks === nothing ?
+              solve(prob, method; dt=h0, saveat=h0) : #reltol=accuracy,
+              solve(prob, method; dt=h0, saveat=h0, callback=callbacks) #reltol=accuracy,
+
+        #sol = solve(prob, method, reltol=accuracy, dt=h0)
+
+        result = Dict(
+            "sessionId" => task["sessionId"],
+            "solution" => [
+                Dict("t" => t, "y" => y) for (t, y) in zip(sol.t, sol.u)
+            ]
+        )
+        return JSON.json(result)
+
+    catch e
+        return JSON.json(Dict("sessionId" => task["sessionId"], "error" => "Ошибка в вычислениях", "details" => string(e)))
+    end
+end
+
+# 🔹 Подключаемся к RabbitMQ
+port = parse(Int, ENV["RABBITMQ_PORT"])#AMQPClient.AMQP_DEFAULT_PORT
+login = ENV["RABBITMQ_USERNAME"]  # Логин, по умолчанию "guest"
+password = ENV["RABBITMQ_PASSWORD"]  # Пароль, по умолчанию "guest"
+REQUEST_QUEUE = ENV["JULIA_QUEUE"]
+RESPONSE_QUEUE = ENV["RESPONSE_QUEUE"]
+host = ENV["RABBITMQ_HOST"]
+println(host)
+
+auth_params = Dict{String,Any}("MECHANISM" => "AMQPLAIN", "LOGIN" => login, "PASSWORD" => password)
+
+# Создание подключения к RabbitMQ
+conn = connection(; virtualhost="/", host=host, port=port, auth_params=auth_params)
+
+channel1 = channel(conn, AMQPClient.UNUSED_CHANNEL, true)
+
+AMQPClient.queue_declare(channel1, REQUEST_QUEUE, durable=true)
+AMQPClient.queue_declare(channel1, RESPONSE_QUEUE, durable=true)
+
+
+println("✅ Julia сервер запущен и слушает juliaQueue...")
+
+function process_message(msg)
+    try
+        if msg !== nothing
+            task = JSON.parse(String(msg.data))
+            println("📩 Получена задача: ", task)
+
+            # Решаем систему ОДУ
+            result = solve_ode(task)
+
+            # Отправляем результат
+            println("📤 Отправляем результат в responseQueue")
+            data = convert(Vector{UInt8}, codeunits(result))
+            msg1 = Message(data)
+            basic_publish(channel1, msg1; routing_key=RESPONSE_QUEUE)
+
+            # Подтверждаем обработку
+            basic_ack(channel1, msg.delivery_tag)
+            #else
+            #println("⏳ Ожидание сообщений...")
+        end
+    catch e
+        println("⚠ Ошибка обработки сообщения: ", e)
+    end
+end
+
+# Бесконечный цикл обработки сообщений
+basic_consume(channel1, REQUEST_QUEUE, process_message)
+
+while true
+    sleep(0.5)
+end
+
+

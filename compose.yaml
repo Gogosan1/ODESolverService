@@ -14,12 +14,12 @@ services:
       RABBITMQ_DEFAULT_USER: "${RABBITMQ_USERNAME}"
       RABBITMQ_DEFAULT_PASS: "${RABBITMQ_PASSWORD}"
 
-  rabbitmq-exporter:
-    image: kbudde/rabbitmq-exporter
-    ports:
-      - "9419:9419"
-    environment:
-      - RABBIT_URL=http://guest:guest@rabbitmq:15672
+  # rabbitmq-exporter:
+  #   image: kbudde/rabbitmq-exporter
+  #   ports:
+  #     - "9419:9419"
+  #   environment:
+  #     - RABBIT_URL=http://guest:guest@rabbitmq:15672
 
   spring-app:
     build:
@@ -33,15 +33,15 @@ services:
       rabbitmq:
         condition: service_healthy
 
-  cpp-server:
-    build:
-      context: ./cpp_GSL_server
-    container_name: cpp-solver
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-    env_file:
-      - .env
+  # cpp-server:
+  #   build:
+  #     context: ./cpp_GSL_server
+  #   container_name: cpp-solver
+  #   depends_on:
+  #     rabbitmq:
+  #       condition: service_healthy
+  #   env_file:
+  #     - .env
 
   julia-server:
     build:
@@ -53,40 +53,40 @@ services:
     env_file:
       - .env
 
-  prometheus:
-    image: prom/prometheus
-    volumes:
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
-    ports:
-      - "${PROMETHEUS_PORT}:9090"
-    depends_on:
-      - spring-app
+#   prometheus:
+#     image: prom/prometheus
+#     volumes:
+#       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+#     ports:
+#       - "${PROMETHEUS_PORT}:9090"
+#     depends_on:
+#       - spring-app
 
-  cadvisor:
-    image: gcr.io/cadvisor/cadvisor:latest
-    container_name: cadvisor
-    ports:
-      - "8081:8080"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro # ✅ Позволяет cAdvisor читать данные контейнеров
-      - /sys:/sys:ro
-      - /var/lib/docker/:/var/lib/docker:ro
+#   cadvisor:
+#     image: gcr.io/cadvisor/cadvisor:latest
+#     container_name: cadvisor
+#     ports:
+#       - "8081:8080"
+#     volumes:
+#       - /var/run/docker.sock:/var/run/docker.sock:ro # ✅ Позволяет cAdvisor читать данные контейнеров
+#       - /sys:/sys:ro
+#       - /var/lib/docker/:/var/lib/docker:ro
 
-  grafana:
-    image: grafana/grafana
-    ports:
-      - "${GRAFANA_PORT}:3000"
-    environment:
-      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER}
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
-      - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
-    volumes:
-      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
-      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
-      - ./grafana/dashboards:/var/lib/grafana/dashboards
-    depends_on:
-      - prometheus
+#   grafana:
+#     image: grafana/grafana
+#     ports:
+#       - "${GRAFANA_PORT}:3000"
+#     environment:
+#       - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER}
+#       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+#       - GF_USERS_ALLOW_SIGN_UP=false
+#       - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+#     volumes:
+#       - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+#       - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+#       - ./grafana/dashboards:/var/lib/grafana/dashboards
+#     depends_on:
+#       - prometheus
 
-volumes:
-  grafana_data:
+# volumes:
+#   grafana_data:

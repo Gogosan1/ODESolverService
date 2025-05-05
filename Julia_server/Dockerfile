@@ -6,7 +6,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y libev-dev
 
 # Устанавливаем нужные пакеты сразу при сборке
-RUN julia -e 'using Pkg; Pkg.add(["DifferentialEquations", "AMQPClient", "JSON", "Symbolics"])'
+RUN julia -e 'using Pkg; Pkg.add(["DifferentialEquations", "AMQPClient", "JSON", "Symbolics", "MacroTools"])'
 # RUN julia -e 'using Pkg; Pkg.add(["DifferentialEquations", "AMQPClient", "JSON", "Symbolics", Libc"])'
 ENV JULIA_NUM_THREADS=4
 
