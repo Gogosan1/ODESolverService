@@ -241,7 +241,26 @@ function get_solver(method_name)
     end
 end
 
-function substitute_vars_to_function(expr::Expr, vars::Dict{String,Int})
+using MacroTools
+
+function substitute_condition_to_function(expr::Expr, vars::Dict{String, Int})
+    # Преобразуем сравнения в нуль-функции для ContinuousCallback
+    expr = MacroTools.postwalk(expr) do x
+        if x isa Expr && x.head == :call && x.args[1] in (:(<), :(>), :(==))
+            op = x.args[1]
+            lhs, rhs = x.args[2], x.args[3]
+            if op == :(>)
+                return Expr(:call, :-, lhs, rhs)  # y1 > 1  => y1 - 1
+            elseif op == :(<)
+                return Expr(:call, :-, rhs, lhs)  # y1 < 1  => 1 - y1
+            elseif op == :(==)
+                return Expr(:call, :-, lhs, rhs)  # y1 == 1 => y1 - 1
+            end
+        end
+        return x
+    end
+
+    # Заменяем переменные (y1, y2, ...) на u[1], u[2], ...
     substituted_expr = MacroTools.postwalk(expr) do x
         if x isa Symbol && haskey(vars, string(x))
             idx = vars[string(x)]
@@ -251,10 +270,9 @@ function substitute_vars_to_function(expr::Expr, vars::Dict{String,Int})
         end
     end
 
-    # Оборачиваем в min(..., 0.0), чтобы получить числовую функцию с нулем в нужный момент
-    wrapped_expr = :(min($substituted_expr, 0.0))
-    return eval(:(u -> $wrapped_expr))
+    return eval(:(u -> $substituted_expr))
 end
+
 
 function substitute_vars_to_affect(expr::Expr, vars::Dict{String,Int})
     substituted_expr = MacroTools.postwalk(expr) do x
@@ -279,24 +297,24 @@ function build_callbacks(events_json::Vector, num_vars::Int)
         condition_expr = Meta.parse(ev["condition"])
         affect_expr = Meta.parse(ev["affect"])
 
-        cond_func = substitute_vars_to_function(condition_expr, vars_dict)
+        cond_func = substitute_condition_to_function(condition_expr, vars_dict)
         affect_func = substitute_vars_to_affect(affect_expr, vars_dict)
 
         condition = (u, t, integrator) -> begin
-        # Выводим информацию о текущем значении y1 и проверке условия
-        println("Step: t = $t, y1 = $(u[1]), Condition: $(Base.invokelatest(cond_func, u))")
-        return Base.invokelatest(cond_func, u)
-    end
+            # Выводим информацию о текущем значении y1 и проверке условия
+            println("Step: t = $t, y1 = $(u[1]), Condition: $(Base.invokelatest(cond_func, u))")
+            return Base.invokelatest(cond_func, u)
+        end
 
-    affect! = integrator -> begin
-        # Выводим информацию о срабатывании события
-        println("Event triggered, changing y2 and y1")
-        Base.invokelatest(affect_func, integrator)
-    end
+        affect! = integrator -> begin
+            # Выводим информацию о срабатывании события
+            println("Event triggered, changing y2 and y1")
+            Base.invokelatest(affect_func, integrator)
+        end
         # condition = (u, t, integrator) -> Base.invokelatest(cond_func, u)
         # affect! = integrator -> Base.invokelatest(affect_func, integrator)
 
-        cb = DiscreteCallback(condition, affect!, save_positions=(true, true))
+        cb = ContinuousCallback(condition, affect!, save_positions=(true, true))
         push!(callbacks, cb)
     end
 
@@ -346,7 +364,7 @@ function solve_ode(task::Dict)
         prob = ODEProblem(f, y0, tspan)
         sol = callbacks === nothing ?
               solve(prob, method; dt=h0, saveat=h0) : #reltol=accuracy,
-              solve(prob, method; dt=h0, saveat=h0, callback=callbacks) #reltol=accuracy,
+              solve(prob, method; dt=h0, callback=callbacks) #reltol=accuracy, saveat=h0,
 
         #sol = solve(prob, method, reltol=accuracy, dt=h0)
 
